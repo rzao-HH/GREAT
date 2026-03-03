@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Greatings - Interaktive Grusskarte</title>
+  <style>
+    /* ===== RESET & BASE ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: #f5f0eb;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+      --primary: #6C63FF;
+      --secondary: #FF6B6B;
+      --accent: #4ECDC4;
+      --bg: #f5f0eb;
+      --card-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      --radius: 12px;
+      --spacing-xs: 8px;
+      --spacing-sm: 12px;
+      --spacing-md: 20px;
+      --spacing-lg: 32px;
+      --spacing-xl: 48px;
+      --font-sm: 14px;
+      --font-md: 16px;
+      --font-lg: 20px;
+      --font-xl: 28px;
+      --font-xxl: 36px;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: linear-gradient(135deg, var(--primary), #8B83FF);
+      color: white;
+      padding: var(--spacing-lg) var(--spacing-md);
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: var(--font-xxl);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .header .subtitle {
+      font-size: var(--font-md);
+      opacity: 0.9;
+    }
+
+    .header .recipient-name {
+      font-size: var(--font-xl);
+      font-weight: bold;
+      margin-top: var(--spacing-sm);
+      color: #FFE0B2;
+    }
+
+    /* ===== NAVIGATION / ACTIONS ===== */
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md);
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: none;
+      border-radius: var(--radius);
+      font-size: var(--font-md);
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--card-shadow);
+    }
+
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-outline {
+      background: white;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+
+    /* ===== PINNWAND ===== */
+    .pinnwand {
+      padding: var(--spacing-md);
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--spacing-md);
+    }
+
+    .greeting-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: var(--spacing-md);
+      box-shadow: var(--card-shadow);
+      transform: rotate(var(--rotate, 0deg));
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .greeting-card:hover {
+      transform: rotate(0deg) scale(1.03);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      z-index: 2;
+    }
+
+    .greeting-card .pin {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 20px;
+      background: var(--secondary);
+      border-radius: 50%;
+      border: 3px solid #c0392b;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .greeting-card .message {
+      font-size: var(--font-md);
+      line-height: 1.5;
+      margin-top: var(--spacing-sm);
+      word-break: break-word;
+    }
+
+    .greeting-card .author {
+      font-size: var(--font-sm);
+      color: #888;
+      margin-top: var(--spacing-sm);
+      text-align: right;
+      font-style: italic;
+    }
+
+    .greeting-card .emoji {
+      font-size: 24px;
+      position: absolute;
+      top: var(--spacing-sm);
+      right: var(--spacing-sm);
+    }
+
+    .greeting-card .reactions {
+      display: flex;
+      gap: 4px;
+      margin-top: var(--spacing-xs);
+      flex-wrap: wrap;
+    }
+
+    .reaction-btn {
+      background: #f0f0f0;
+      border: none;
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .reaction-btn:hover {
+      background: #e0e0e0;
+    }
+
+    .reaction-btn.active {
+      background: #E8EAF6;
+      border: 1px solid var(--primary);
+    }
+
+    /* ===== FORMULAR (Modal) ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-md);
+    }
+
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: var(--radius);
+      padding: var(--spacing-lg);
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+    }
+
+    .modal h2 {
+      color: var(--primary);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .form-group {
+      margin-bottom: var(--spacing-md);
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: var(--spacing-xs);
+      color: #555;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: var(--spacing-sm);
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: var(--font-md);
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .emoji-picker {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .emoji-option {
+      font-size: 24px;
+      padding: 6px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: none;
+    }
+
+    .emoji-option:hover {
+      background: #f0f0f0;
+    }
+
+    .emoji-option.selected {
+      border-color: var(--primary);
+      background: #E8EAF6;
+    }
+
+    /* ===== LANDING (Karte erstellen) ===== */
+    .landing {
+      text-align: center;
+      padding: var(--spacing-xl) var(--spacing-md);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .landing h2 {
+      color: var(--primary);
+      font-size: var(--font-xl);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .landing p {
+      color: #666;
+      margin-bottom: var(--spacing-lg);
+      font-size: var(--font-md);
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: #999;
+    }
+
+    .empty-state .icon {
+      font-size: 64px;
+      margin-bottom: var(--spacing-md);
+    }
+
+    /* ===== SHARE BAR ===== */
+    .share-bar {
+      background: white;
+      border-radius: var(--radius);
+      padding: var(--spacing-sm) var(--spacing-md);
+      margin: 0 var(--spacing-md) var(--spacing-md);
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      box-shadow: var(--card-shadow);
+    }
+
+    .share-bar input {
+      flex: 1;
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: var(--font-sm);
+      color: #666;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      text-align: center;
+      padding: var(--spacing-lg);
+      color: #999;
+      font-size: var(--font-sm);
+    }
+
+    /* ===== RESPONSIVE ===== */
+
+    /* Tablet */
+    @media (max-width: 768px) {
+      .header h1 { font-size: var(--font-xl); }
+      .header .recipient-name { font-size: var(--font-lg); }
+
+      .pinnwand {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+      }
+
+      .greeting-card {
+        transform: none;
+      }
+
+      .share-bar {
+        flex-direction: column;
+        margin: 0 var(--spacing-sm) var(--spacing-sm);
+      }
+    }
+
+    /* Mobile */
+    @media (max-width: 480px) {
+      .header {
+        padding: var(--spacing-md) var(--spacing-sm);
+      }
+
+      .header h1 { font-size: var(--font-lg); }
+      .header .recipient-name { font-size: var(--font-md); }
+
+      .pinnwand {
+        grid-template-columns: 1fr;
+        padding: var(--spacing-xs);
+        gap: var(--spacing-xs);
+      }
+
+      .greeting-card {
+        min-height: 120px;
+      }
+
+      .actions {
+        padding: var(--spacing-sm);
+      }
+
+      .btn {
+        font-size: var(--font-sm);
+        padding: var(--spacing-xs) var(--spacing-sm);
+      }
+
+      .modal {
+        padding: var(--spacing-md);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== VIEW: Landing (Karte erstellen) ===== -->
+  <div id="view-landing">
+    <div class="header">
+      <h1>Greatings</h1>
+      <p class="subtitle">Interaktive Grusskarten fuer besondere Anlaesse</p>
+    </div>
+    <div class="landing">
+      <h2>Erstelle eine Grusskarte</h2>
+      <p>Sammle Gruesse von Kolleginnen und Kollegen fuer eine Verabschiedung, ein Jubilaeum oder einen anderen besonderen Anlass.</p>
+      <button class="btn btn-primary" onclick="showModal('create-card')">Neue Grusskarte erstellen</button>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: Karte anzeigen ===== -->
+  <div id="view-card" style="display:none;">
+    <div class="header">
+      <h1>Greatings</h1>
+      <p class="subtitle" id="card-title"></p>
+      <p class="recipient-name" id="card-recipient"></p>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="showModal('add-greeting')">Gruss hinterlassen</button>
+      <button class="btn btn-outline" onclick="copyShareLink()">Link teilen</button>
+    </div>
+
+    <div class="share-bar" id="share-bar" style="display:none;">
+      <span>Teile diesen Link:</span>
+      <input type="text" id="share-url" readonly>
+      <button class="btn btn-accent" onclick="copyShareLink()" id="copy-btn">Kopieren</button>
+    </div>
+
+    <div class="pinnwand" id="pinnwand">
+      <div class="empty-state" id="empty-state">
+        <div class="icon">&#128140;</div>
+        <h3>Noch keine Gruesse</h3>
+        <p>Sei der/die Erste und hinterlasse einen Gruss!</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Erstellt mit Greatings &bull; Eine interaktive Grusskarte</p>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Karte erstellen ===== -->
+  <div class="modal-overlay" id="modal-create-card" onclick="closeModalOutside(event)">
+    <div class="modal">
+      <h2>Neue Grusskarte</h2>
+      <div class="form-group">
+        <label for="recipient">Fuer wen ist die Karte? *</label>
+        <input type="text" id="recipient" placeholder="z.B. Max Mustermann">
+      </div>
+      <div class="form-group">
+        <label for="occasion">Anlass</label>
+        <input type="text" id="occasion" placeholder="z.B. Abschied, Jubilaeum, Geburtstag">
+      </div>
+      <div class="form-group">
+        <label for="creator">Dein Name *</label>
+        <input type="text" id="creator" placeholder="Dein Name">
+      </div>
+      <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:24px;">
+        <button class="btn btn-outline" onclick="closeModal('create-card')">Abbrechen</button>
+        <button class="btn btn-primary" onclick="createCard()">Karte erstellen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Gruss hinterlassen ===== -->
+  <div class="modal-overlay" id="modal-add-greeting" onclick="closeModalOutside(event)">
+    <div class="modal">
+      <h2>Gruss hinterlassen</h2>
+      <div class="form-group">
+        <label for="greeting-author">Dein Name (optional)</label>
+        <input type="text" id="greeting-author" placeholder="Anonym">
+      </div>
+      <div class="form-group">
+        <label for="greeting-message">Dein Gruss *</label>
+        <textarea id="greeting-message" placeholder="Schreibe deinen Gruss..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Emoji (optional)</label>
+        <div class="emoji-picker" id="emoji-picker">
+          <button class="emoji-option" data-emoji="&#128079;">&#128079;</button>
+          <button class="emoji-option" data-emoji="&#10084;">&#10084;</button>
+          <button class="emoji-option" data-emoji="&#127881;">&#127881;</button>
+          <button class="emoji-option" data-emoji="&#11088;">&#11088;</button>
+          <button class="emoji-option" data-emoji="&#127803;">&#127803;</button>
+          <button class="emoji-option" data-emoji="&#128640;">&#128640;</button>
+          <button class="emoji-option" data-emoji="&#9728;">&#9728;</button>
+          <button class="emoji-option" data-emoji="&#127752;">&#127752;</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:24px;">
+        <button class="btn btn-outline" onclick="closeModal('add-greeting')">Abbrechen</button>
+        <button class="btn btn-secondary" onclick="submitGreeting()">Abschicken</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const API = window.location.origin + '/api';
+  let currentCardId = null;
+  let selectedEmoji = null;
+
+  // ===== ROUTING =====
+  function init() {
+    const params = new URLSearchParams(window.location.search);
+    const cardId = params.get('card');
+    if (cardId) {
+      currentCardId = cardId;
+      loadCard(cardId);
+    } else {
+      document.getElementById('view-landing').style.display = '';
+      document.getElementById('view-card').style.display = 'none';
+    }
+  }
+
+  // ===== CARD ERSTELLEN =====
+  async function createCard() {
+    const recipientName = document.getElementById('recipient').value.trim();
+    const createdBy = document.getElementById('creator').value.trim();
+    const occasion = document.getElementById('occasion').value.trim();
+
+    if (!recipientName || !createdBy) {
+      alert('Bitte fuellen Sie alle Pflichtfelder aus.');
+      return;
+    }
+
+    const title = occasion
+      ? occasion + ' - ' + recipientName
+      : 'Grusskarte fuer ' + recipientName;
+
+    try {
+      const res = await fetch(API + '/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, recipientName, createdBy })
+      });
+      const card = await res.json();
+      if (res.ok) {
+        window.history.pushState({}, '', '?card=' + card.id);
+        currentCardId = card.id;
+        closeModal('create-card');
+        loadCard(card.id);
+      } else {
+        alert(card.error || 'Fehler beim Erstellen');
+      }
+    } catch (e) {
+      alert('Serverfehler: ' + e.message);
+    }
+  }
+
+  // ===== CARD LADEN =====
+  async function loadCard(cardId) {
+    try {
+      const res = await fetch(API + '/cards/' + cardId);
+      if (!res.ok) {
+        alert('Karte nicht gefunden');
+        return;
+      }
+      const { card, greetings, reactions } = await res.json();
+
+      document.getElementById('view-landing').style.display = 'none';
+      document.getElementById('view-card').style.display = '';
+      document.getElementById('card-title').textContent = card.title;
+      document.getElementById('card-recipient').textContent = card.recipientName;
+
+      renderGreetings(greetings, reactions);
+    } catch (e) {
+      alert('Fehler beim Laden: ' + e.message);
+    }
+  }
+
+  // ===== GRUESSE RENDERN (Pinnwand) =====
+  function renderGreetings(greetings, reactions) {
+    const pinnwand = document.getElementById('pinnwand');
+    const emptyState = document.getElementById('empty-state');
+
+    if (greetings.length === 0) {
+      pinnwand.innerHTML = '';
+      pinnwand.appendChild(emptyState);
+      emptyState.style.display = '';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    pinnwand.innerHTML = '';
+
+    greetings.forEach((g, i) => {
+      const rotations = [-3, 2, -1, 3, -2, 1, -4, 2];
+      const rotate = rotations[i % rotations.length];
+      const cardReactions = reactions.filter(r => r.greetingId === g.id);
+
+      const el = document.createElement('div');
+      el.className = 'greeting-card';
+      el.style.setProperty('--rotate', rotate + 'deg');
+      el.style.backgroundColor = g.color || '#fff';
+
+      el.innerHTML =
+        '<div class="pin"></div>' +
+        (g.emoji ? '<span class="emoji">' + g.emoji + '</span>' : '') +
+        '<div class="message">' + escapeHtml(g.message) + '</div>' +
+        '<div class="author">- ' + escapeHtml(g.author) + '</div>' +
+        '<div class="reactions">' +
+          '<button class="reaction-btn" onclick="react(\'' + g.id + '\', \'&#128077;\')">&#128077; ' + countReaction(cardReactions, '&#128077;') + '</button>' +
+          '<button class="reaction-btn" onclick="react(\'' + g.id + '\', \'&#10084;\')">&#10084; ' + countReaction(cardReactions, '&#10084;') + '</button>' +
+          '<button class="reaction-btn" onclick="react(\'' + g.id + '\', \'&#128514;\')">&#128514; ' + countReaction(cardReactions, '&#128514;') + '</button>' +
+        '</div>';
+
+      pinnwand.appendChild(el);
+    });
+  }
+
+  function countReaction(reactions, type) {
+    const c = reactions.filter(r => r.type === type).length;
+    return c > 0 ? c : '';
+  }
+
+  // ===== GRUSS ABSCHICKEN =====
+  async function submitGreeting() {
+    const author = document.getElementById('greeting-author').value.trim();
+    const message = document.getElementById('greeting-message').value.trim();
+
+    if (!message) {
+      alert('Bitte schreibe einen Gruss.');
+      return;
+    }
+
+    try {
+      const res = await fetch(API + '/cards/' + currentCardId + '/greetings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ author: author || 'Anonym', message, emoji: selectedEmoji })
+      });
+      if (res.ok) {
+        closeModal('add-greeting');
+        document.getElementById('greeting-author').value = '';
+        document.getElementById('greeting-message').value = '';
+        selectedEmoji = null;
+        document.querySelectorAll('.emoji-option').forEach(e => e.classList.remove('selected'));
+        loadCard(currentCardId);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Fehler');
+      }
+    } catch (e) {
+      alert('Serverfehler: ' + e.message);
+    }
+  }
+
+  // ===== REACTION =====
+  async function react(greetingId, type) {
+    try {
+      await fetch(API + '/greetings/' + greetingId + '/reactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type })
+      });
+      loadCard(currentCardId);
+    } catch (e) {
+      console.error('Reaction error:', e);
+    }
+  }
+
+  // ===== SHARE =====
+  function copyShareLink() {
+    const url = window.location.origin + '?card=' + currentCardId;
+    const shareBar = document.getElementById('share-bar');
+    const urlInput = document.getElementById('share-url');
+
+    urlInput.value = url;
+    shareBar.style.display = 'flex';
+
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copy-btn');
+      btn.textContent = 'Kopiert!';
+      setTimeout(function() { btn.textContent = 'Kopieren'; }, 2000);
+    }).catch(function() {
+      urlInput.select();
+    });
+  }
+
+  // ===== MODALS =====
+  function showModal(name) {
+    document.getElementById('modal-' + name).classList.add('visible');
+  }
+
+  function closeModal(name) {
+    document.getElementById('modal-' + name).classList.remove('visible');
+  }
+
+  function closeModalOutside(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+      e.target.classList.remove('visible');
+    }
+  }
+
+  // ===== EMOJI PICKER =====
+  document.querySelectorAll('.emoji-option').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.emoji-option').forEach(function(b) { b.classList.remove('selected'); });
+      btn.classList.add('selected');
+      selectedEmoji = btn.dataset.emoji;
+    });
+  });
+
+  // ===== HELPERS =====
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // Start
+  init();
+</script>
+</body>
+</html>
